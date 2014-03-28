@@ -24,7 +24,3 @@ file '/etc/sumo.conf' do
   action :delete
 end
 
-file '/etc/sumo.json' do
-  action :delete
-end
-

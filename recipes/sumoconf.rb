@@ -67,5 +67,3 @@ template '/etc/sumo.conf' do
     :password  => credentials[:password],
   })
 end
-      
-
