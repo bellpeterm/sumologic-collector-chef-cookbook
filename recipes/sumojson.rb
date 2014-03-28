@@ -77,72 +77,12 @@ end
 
 template '/etc/sumo.json' do
   cookbook node['sumologic']['json_config_cookbook']
-  source 'custom.json.erb'
+  source 'sumo.json.erb'
   owner 'root'
   group 'root'
   mode 0644
   action :nothing
 end
 
-# Update collector sources using the SumoLogic API
-ruby_block "push changes to api" do
-  block do
-
-    credentials = {}
-  
-    if node[:sumologic][:credentials]
-      creds = node[:sumologic][:credentials]
-  
-      if creds[:secret_file]
-        secret = Chef::EncryptedDataBagItem.load_secret(creds[:secret_file]) 
-        bag = Chef::EncryptedDataBagItem.load( creds[:bag_name], creds[:item_name], secret )
-      else
-        bag = data_bag_item( creds[:bag_name], creds[:item_name] )
-      end
-     
-      [:accessID, :accessKey, :email, :password].each do |sym|
-        credentials[sym] = bag[sym.to_s] # Chef::DataBagItem 10.28 doesn't work with symbols
-      end
-      
-    else
-      [:accessID,:accessKey,:email,:password].each do |sym|
-        credentials[sym]  = node[:sumologic][sym]
-      end 
-    end
-      
-    user = credentials[:accessID] || credentials[:username]
-    pass = credentials[:accessKey] || credentials[:password]
-
-    apiconnection = Sumo.api_conn( user, pass )
-    begin
-      collector = Sumo.get_collector( apiconnection, node['fqdn'] )
-      apisources = Sumo.get_sources( apiconnection, collector )
-      localsources = Sumo.find_sources( "/etc/sumo.json" )
-      
-      updates = Sumo.sources_diff( localsources, apisources )
-      
-      Chef::Log.debug JSON.pretty_generate( updates )
-      
-      updates.each do |src|
-        src.delete(:changedelement)
-        case src.delete(:apiaction)
-        when :create
-          Sumo.create_source( apiconnection, collector, src )
-        when :update
-          Sumo.update_source( apiconnection, collector, src )
-        when :delete
-          Sumo.delete_source( apiconnection, collector, src )
-        end
-      end
-    rescue Exception => e
-      Chef::Log.error "\nUnable to configure sources via SumoLogic API: " + e.message
-      Chef::Log.error "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
-      FileUtils.touch "/etc/sumo.json", :mtime => Time.now - 86400
-    end
-  end
-  if ::File.exists?( "/etc/sumo.json" ) and ::File.mtime( "/etc/sumo.json" ) <  Time.now - 86400
-    action :run
-  else
-    action :nothing
-  end
-end
+# Include sumoapi recipe to update the api based on the updated sumo.json
+include_recipe 'sumologic-collector::sumoapi'

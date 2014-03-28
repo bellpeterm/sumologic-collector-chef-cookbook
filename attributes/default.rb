@@ -40,17 +40,13 @@ default['sumologic']['json_config_cookbook'] = 'sumologic-collector'
 # your own custom sumo.conf template.
 default['sumologic']['conf_config_cookbook'] = 'sumologic-collector'
 
-# Default sumo.json template is set to nil so that it's determined in the
-# template based on platform_family.  Override this if you want to use a
-# custom template name from a custom sumo.json configuration cookbook.
-default['sumologic']['json_template'] = nil
+# Use this if you would like to manually specify the JSON for ALL of your sources.  You will not be able to use
+# the sumologic-collector_source if you specify your sources this way.
+default['sumologic']['sources'] = nil
 
 # Default sumo.conf template.  Override this if you want to use a custom
 # template name from a custom sumo.conf configuration cookbook.
 default['sumologic']['conf_template'] = nil
-
-# Default to using LWRP's for specifying log sources
-default['sumologic']['lwrp'] = true
 
 #Platform Specific Attributes
 case platform
