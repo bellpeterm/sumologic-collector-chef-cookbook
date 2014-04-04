@@ -72,7 +72,7 @@ ruby_block "push changes to api" do
       end
     rescue Exception => e
       Chef::Log.error "\nUnable to configure sources via SumoLogic API: " + e.message
-      Chef::Log.error "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
+      Chef::Log.debug "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
       FileUtils.touch "/etc/sumo.json", :mtime => Time.now - 86400
     end
   end
